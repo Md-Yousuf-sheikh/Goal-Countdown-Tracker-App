@@ -31,9 +31,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   placeholder = 'Select Date',
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<number>(1);
-  const [selectedMonth, setSelectedMonth] = useState<number>(1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  
+  // Initialize with current date to show it in center when no date is selected
+  const today = new Date();
+  const [selectedDay, setSelectedDay] = useState<number>(today.getDate());
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
 
   // Parse the selected date when component mounts or date changes
   useEffect(() => {
@@ -43,13 +46,61 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       setSelectedMonth(month);
       setSelectedDay(day);
     } else {
-      // Set default to today
+      // Set default to today - this ensures current date is shown in center when no date is selected
       const today = new Date();
       setSelectedYear(today.getFullYear());
       setSelectedMonth(today.getMonth() + 1);
       setSelectedDay(today.getDate());
     }
   }, [selectedDate]);
+
+  // Refs for each picker wheel to control scrolling
+  const dayScrollRef = React.useRef<ScrollView>(null);
+  const monthScrollRef = React.useRef<ScrollView>(null);
+  const yearScrollRef = React.useRef<ScrollView>(null);
+
+  // Center the selected values when modal opens
+  useEffect(() => {
+    if (isVisible) {
+      const itemHeight = 50;
+      
+      // Center day picker
+      const dayOptions = generateDayOptions();
+      const dayIndex = dayOptions.findIndex(option => option.value === selectedDay);
+      if (dayIndex >= 0 && dayScrollRef.current) {
+        setTimeout(() => {
+          dayScrollRef.current?.scrollTo({
+            y: dayIndex * itemHeight,
+            animated: true,
+          });
+        }, 150);
+      }
+
+      // Center month picker
+      const monthOptions = generateMonthOptions();
+      const monthIndex = monthOptions.findIndex(option => option.value === selectedMonth);
+      if (monthIndex >= 0 && monthScrollRef.current) {
+        setTimeout(() => {
+          monthScrollRef.current?.scrollTo({
+            y: monthIndex * itemHeight,
+            animated: true,
+          });
+        }, 200);
+      }
+
+      // Center year picker
+      const yearOptions = generateYearOptions();
+      const yearIndex = yearOptions.findIndex(option => option.value === selectedYear);
+      if (yearIndex >= 0 && yearScrollRef.current) {
+        setTimeout(() => {
+          yearScrollRef.current?.scrollTo({
+            y: yearIndex * itemHeight,
+            animated: true,
+          });
+        }, 250);
+      }
+    }
+  }, [isVisible, selectedDay, selectedMonth, selectedYear]);
 
   // Generate array of days based on selected month and year
   const getDaysInMonth = (month: number, year: number): number => {
@@ -114,7 +165,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     options: DateOption[],
     selectedValue: number,
     onValueChange: (value: number) => void,
-    width: number
+    width: number,
+    scrollRef: React.RefObject<ScrollView | null>
   ) => {
     const itemHeight = 50;
     const visibleItems = 3;
@@ -122,6 +174,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
     return (
       <ScrollView
+        ref={scrollRef}
         style={[styles.pickerWheel, { width, height: totalHeight }]}
         showsVerticalScrollIndicator={false}
         snapToInterval={itemHeight}
@@ -131,7 +184,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           paddingBottom: itemHeight,
         }}
       >
-        {options.map((option) => (
+        {options.map((option, index) => (
           <TouchableOpacity
             key={option.value}
             style={[
@@ -193,19 +246,22 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 generateDayOptions(),
                 selectedDay,
                 setSelectedDay,
-                Dimensions.get('window').width / 3
+                Dimensions.get('window').width / 3,
+                dayScrollRef
               )}
               {renderPickerWheel(
                 generateMonthOptions(),
                 selectedMonth,
                 setSelectedMonth,
-                Dimensions.get('window').width / 3
+                Dimensions.get('window').width / 3,
+                monthScrollRef
               )}
               {renderPickerWheel(
                 generateYearOptions(),
                 selectedYear,
                 setSelectedYear,
-                Dimensions.get('window').width / 3
+                Dimensions.get('window').width / 3,
+                yearScrollRef
               )}
             </View>
 
