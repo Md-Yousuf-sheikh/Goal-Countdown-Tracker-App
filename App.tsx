@@ -8,11 +8,14 @@ import { StyleSheet } from "react-native";
 // Import screens
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { CreateGoalScreen } from "./src/screens/CreateGoalScreen";
+import { EditGoalScreen } from "./src/screens/EditGoalScreen";
+import { Goal } from "./src/storage/storage";
 
 // Define navigation types
 export type RootStackParamList = {
   Home: undefined;
   CreateGoal: undefined;
+  EditGoal: { goal: Goal };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -59,6 +62,22 @@ export default function App() {
             component={CreateGoalScreen}
             options={{
               title: "Create Goal",
+              headerStyle: {
+                backgroundColor: "#007AFF",
+              },
+              headerTintColor: "#fff",
+              headerTitleStyle: {
+                fontWeight: "bold",
+                fontSize: 18,
+              },
+              headerBackTitle: "Back",
+            }}
+          />
+          <Stack.Screen
+            name="EditGoal"
+            component={EditGoalScreen}
+            options={{
+              title: "Edit Goal",
               headerStyle: {
                 backgroundColor: "#007AFF",
               },

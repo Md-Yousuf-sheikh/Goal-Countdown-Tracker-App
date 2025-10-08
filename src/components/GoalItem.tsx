@@ -164,6 +164,10 @@ export const GoalItem: React.FC<GoalItemProps> = ({
   useEffect(() => {
     console.log('Setting up progress updates for goal:', goal.title);
     
+    // Reset progress state when goal data changes
+    setCurrentProgress(0);
+    progressAnimation.setValue(0);
+    
     // Initialize progress animation with current calculated progress
     const initialProgress = calculateTargetProgress();
     setCurrentProgress(initialProgress);
@@ -192,7 +196,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [goal.id, isExpired]); // Depend on goal.id and isExpired
+  }, [goal.id, goal.deadlineDate, goal.deadlineTime, isExpired]); // Depend on goal data and expired state
 
   /**
    * Cleanup interval when component unmounts

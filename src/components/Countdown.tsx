@@ -107,6 +107,9 @@ export const Countdown: React.FC<CountdownProps> = ({
 
   // Start/stop countdown timer
   useEffect(() => {
+    // Reset expired state when deadline changes
+    setIsExpired(false);
+    
     // Initial calculation
     updateCountdown();
     

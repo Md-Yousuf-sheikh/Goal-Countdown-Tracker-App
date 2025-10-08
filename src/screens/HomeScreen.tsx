@@ -102,6 +102,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   /**
+   * Handle goal editing (navigate to edit screen)
+   */
+  const handleEditGoal = (goal: Goal) => {
+    navigation.navigate('EditGoal', { 
+      goal,
+      onGoalUpdated: (updatedGoal: Goal) => {
+        // Update the goal in the local state immediately
+        setGoals(prevGoals => 
+          prevGoals.map(g => g.id === updatedGoal.id ? updatedGoal : g)
+        );
+      }
+    });
+  };
+
+  /**
    * Check for newly expired goals and update state
    */
   const checkForExpiredGoals = useCallback(() => {
@@ -282,6 +297,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     <GoalItem
       goal={item}
       onDelete={handleDeleteGoal}
+      onEdit={handleEditGoal}
     />
   );
 
