@@ -28,9 +28,33 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   placeholder = 'Select Time',
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [hour, setHour] = useState<number>(12);
-  const [minute, setMinute] = useState<number>(0);
-  const [isAM, setIsAM] = useState<boolean>(true);
+  
+  // Initialize with current time to show it in center when no time is selected
+  const now = new Date();
+  const currentHour24 = now.getHours();
+  const currentMinute = now.getMinutes();
+  
+  // Convert current time to 12-hour format for initial state
+  let initialHour = 12;
+  let initialIsAM = true;
+  
+  if (currentHour24 === 0) {
+    initialHour = 12;
+    initialIsAM = true;
+  } else if (currentHour24 < 12) {
+    initialHour = currentHour24;
+    initialIsAM = true;
+  } else if (currentHour24 === 12) {
+    initialHour = 12;
+    initialIsAM = false;
+  } else {
+    initialHour = currentHour24 - 12;
+    initialIsAM = false;
+  }
+  
+  const [hour, setHour] = useState<number>(initialHour);
+  const [minute, setMinute] = useState<number>(currentMinute);
+  const [isAM, setIsAM] = useState<boolean>(initialIsAM);
 
   // Parse the selected time when component mounts or time changes
   useEffect(() => {
@@ -56,7 +80,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
       
       setMinute(minute24);
     } else {
-      // Set default to current time
+      // Set default to current time - this ensures current time is shown in center when no time is selected
       const now = new Date();
       const hour24 = now.getHours();
       const minute24 = now.getMinutes();
@@ -78,6 +102,41 @@ export const TimePicker: React.FC<TimePickerProps> = ({
       setMinute(minute24);
     }
   }, [selectedTime]);
+
+  // Refs for each picker wheel to control scrolling
+  const hourScrollRef = React.useRef<ScrollView>(null);
+  const minuteScrollRef = React.useRef<ScrollView>(null);
+
+  // Center the selected values when modal opens
+  useEffect(() => {
+    if (isVisible) {
+      const itemHeight = 50;
+      
+      // Center hour picker
+      const hourOptions = generateHourOptions();
+      const hourIndex = hourOptions.findIndex(option => option.value === hour);
+      if (hourIndex >= 0 && hourScrollRef.current) {
+        setTimeout(() => {
+          hourScrollRef.current?.scrollTo({
+            y: hourIndex * itemHeight,
+            animated: true,
+          });
+        }, 150);
+      }
+
+      // Center minute picker
+      const minuteOptions = generateMinuteOptions();
+      const minuteIndex = minuteOptions.findIndex(option => option.value === minute);
+      if (minuteIndex >= 0 && minuteScrollRef.current) {
+        setTimeout(() => {
+          minuteScrollRef.current?.scrollTo({
+            y: minuteIndex * itemHeight,
+            animated: true,
+          });
+        }, 200);
+      }
+    }
+  }, [isVisible, hour, minute]);
 
   // Convert 12-hour format to 24-hour format for storage
   const convertTo24Hour = (hour12: number, minute12: number, isAM: boolean): string => {
@@ -166,7 +225,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     options: { value: number; label: string }[],
     selectedValue: number,
     onValueChange: (value: number) => void,
-    width: number
+    width: number,
+    scrollRef: React.RefObject<ScrollView | null>
   ) => {
     const itemHeight = 50;
     const visibleItems = 3;
@@ -174,6 +234,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
     return (
       <ScrollView
+        ref={scrollRef}
         style={[styles.pickerWheel, { width, height: totalHeight }]}
         showsVerticalScrollIndicator={false}
         snapToInterval={itemHeight}
@@ -245,14 +306,16 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 generateHourOptions(),
                 hour,
                 setHour,
-                Dimensions.get('window').width / 4
+                Dimensions.get('window').width / 4,
+                hourScrollRef
               )}
               <Text style={styles.separator}>:</Text>
               {renderPickerWheel(
                 generateMinuteOptions(),
                 minute,
                 setMinute,
-                Dimensions.get('window').width / 4
+                Dimensions.get('window').width / 4,
+                minuteScrollRef
               )}
             </View>
 
