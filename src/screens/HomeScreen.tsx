@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { GoalStorage, Goal } from '../storage/storage';
 import { GoalItem } from '../components/GoalItem';
 import { CountdownUtils } from '../components/Countdown';
@@ -30,6 +31,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [sortBy, setSortBy] = useState<'deadline' | 'created' | 'title'>('deadline');
   const [filterBy, setFilterBy] = useState<'all' | 'active' | 'expired'>('all');
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const expiryCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Load goals from storage
@@ -57,6 +59,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   useEffect(() => {
     loadGoals();
   }, [loadGoals]);
+
 
   /**
    * Handle goal deletion
@@ -97,6 +100,111 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const handleCreateGoal = () => {
     navigation.navigate('CreateGoal');
   };
+
+  /**
+   * Check for newly expired goals and update state
+   */
+  const checkForExpiredGoals = useCallback(() => {
+    setGoals(prevGoals => {
+      let hasChanges = false;
+      const updatedGoals = prevGoals.map(goal => {
+        const isExpired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);
+        // If goal just expired, we need to trigger a re-render
+        if (isExpired) {
+          hasChanges = true;
+          console.log(`Goal "${goal.title}" has expired!`);
+        }
+        return goal;
+      });
+      
+      // Only update state if there are changes to prevent unnecessary re-renders
+      return hasChanges ? [...updatedGoals] : prevGoals;
+    });
+  }, []);
+
+  /**
+   * Check for goals expiring soon (within next minute) for smoother transitions
+   */
+  const checkForGoalsExpiringSoon = useCallback(() => {
+    setGoals(prevGoals => {
+      let hasChanges = false;
+      const updatedGoals = prevGoals.map(goal => {
+        const isExpired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);
+        if (!isExpired) {
+          // Check if goal expires within the next minute
+          try {
+            const [year, month, day] = goal.deadlineDate.split('-').map(Number);
+            const [hour, minute] = goal.deadlineTime.split(':').map(Number);
+            const deadline = new Date(year, month - 1, day, hour, minute, 0, 0);
+            const now = new Date();
+            const timeUntilExpiry = deadline.getTime() - now.getTime();
+            
+            // If expires within 60 seconds, trigger more frequent updates
+            if (timeUntilExpiry <= 60000 && timeUntilExpiry > 0) {
+              hasChanges = true;
+            }
+          } catch (error) {
+            console.error('Error checking expiry time:', error);
+          }
+        }
+        return goal;
+      });
+      
+      return hasChanges ? [...updatedGoals] : prevGoals;
+    });
+  }, []);
+
+  /**
+   * Start periodic expiry checking
+   */
+  const startExpiryChecking = useCallback(() => {
+    // Clear existing interval
+    if (expiryCheckInterval.current) {
+      clearInterval(expiryCheckInterval.current);
+    }
+    
+    // Check for expired goals every 10 seconds for more responsive updates
+    expiryCheckInterval.current = setInterval(() => {
+      console.log('Checking for expired goals...');
+      checkForExpiredGoals();
+      checkForGoalsExpiringSoon();
+    }, 10000);
+  }, [checkForExpiredGoals, checkForGoalsExpiringSoon]);
+
+  /**
+   * Stop periodic expiry checking
+   */
+  const stopExpiryChecking = useCallback(() => {
+    if (expiryCheckInterval.current) {
+      clearInterval(expiryCheckInterval.current);
+      expiryCheckInterval.current = null;
+    }
+  }, []);
+
+  /**
+   * Start expiry checking when component mounts and stop when unmounts
+   */
+  useEffect(() => {
+    startExpiryChecking();
+    
+    return () => {
+      stopExpiryChecking();
+    };
+  }, [startExpiryChecking, stopExpiryChecking]);
+
+  /**
+   * Auto-refresh when screen comes into focus (e.g., returning from CreateGoal)
+   */
+  useFocusEffect(
+    useCallback(() => {
+      console.log('HomeScreen focused - refreshing goals');
+      loadGoals();
+      // Also check for expired goals immediately when screen comes into focus
+      setTimeout(() => {
+        checkForExpiredGoals();
+      }, 100);
+    }, [loadGoals, checkForExpiredGoals])
+  );
 
   /**
    * Handle refresh
