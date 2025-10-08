@@ -1,9 +1,21 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
+import * as Notifications from "expo-notifications";
+
+// Configure how notifications are displayed when received in the foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 // Import screens
 import { HomeScreen } from "./src/screens/HomeScreen";
@@ -26,6 +38,18 @@ const Stack = createStackNavigator<RootStackParamList>();
  * Integrates all screens and handles navigation flow
  */
 export default function App() {
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
+
+  async function registerForPushNotificationsAsync() {
+    // Request permission for notifications
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission not granted for notifications!");
+      return;
+    }
+  }
   return (
     <GestureHandlerRootView>
       <NavigationContainer>

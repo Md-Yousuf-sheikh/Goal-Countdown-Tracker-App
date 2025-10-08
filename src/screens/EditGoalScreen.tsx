@@ -13,7 +13,6 @@ import {
 import { DatePicker } from '../components/DatePicker';
 import { TimePicker } from '../components/TimePicker';
 import { GoalStorage, Goal } from '../storage/storage';
-import { NotificationManager } from '../utils/notifications';
 
 interface EditGoalScreenProps {
   navigation: any;
@@ -133,22 +132,14 @@ export const EditGoalScreen: React.FC<EditGoalScreenProps> = ({
         // If deadline changed, reschedule notifications
         if (deadlineChanged && goal.notificationIds) {
           try {
-            // Cancel existing notifications
-            await NotificationManager.cancelGoalNotifications(goal.id);
-            
+         
+     
             // Create updated goal object for notification scheduling
             const updatedGoal: Goal = {
               ...goal,
               ...updatedGoalData,
             };
-            
-            // Schedule new notifications
-            const notificationIds = await NotificationManager.scheduleMultipleGoalNotifications(updatedGoal);
-            if (notificationIds.length > 0) {
-              // Update goal with new notification IDs
-              await GoalStorage.updateGoal(goal.id, { notificationIds });
-              updatedGoal.notificationIds = notificationIds;
-            }
+      
           } catch (notificationError) {
             console.error('Error rescheduling notifications:', notificationError);
             // Don't fail the goal update if notifications fail
