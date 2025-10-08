@@ -12,6 +12,7 @@ import { GoalStorage, Goal } from '../storage/storage';
 import { GoalItem } from '../components/GoalItem';
 import { CountdownUtils } from '../components/Countdown';
 import { NotificationManager } from '../utils/notifications';
+import { SortFilterModal } from '../components/SortFilterModal';
 
 interface HomeScreenProps {
   navigation: any;
@@ -28,6 +29,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'deadline' | 'created' | 'title'>('deadline');
   const [filterBy, setFilterBy] = useState<'all' | 'active' | 'expired'>('all');
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   /**
    * Load goals from storage
@@ -227,58 +229,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Sort and Filter Controls */}
-        <View style={styles.controlsContainer}>
-          <View style={styles.controlGroup}>
-            <Text style={styles.controlLabel}>Sort by:</Text>
-            <View style={styles.controlButtons}>
-              {(['deadline', 'created', 'title'] as const).map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  style={[
-                    styles.controlButton,
-                    sortBy === option && styles.controlButtonActive,
-                  ]}
-                  onPress={() => setSortBy(option)}
-                >
-                  <Text
-                    style={[
-                      styles.controlButtonText,
-                      sortBy === option && styles.controlButtonTextActive,
-                    ]}
-                  >
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.controlGroup}>
-            <Text style={styles.controlLabel}>Filter:</Text>
-            <View style={styles.controlButtons}>
-              {(['all', 'active', 'expired'] as const).map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  style={[
-                    styles.controlButton,
-                    filterBy === option && styles.controlButtonActive,
-                  ]}
-                  onPress={() => setFilterBy(option)}
-                >
-                  <Text
-                    style={[
-                      styles.controlButtonText,
-                      filterBy === option && styles.controlButtonTextActive,
-                    ]}
-                  >
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
+        {/* Sort and Filter Button */}
+        <TouchableOpacity
+          style={styles.sortFilterButton}
+          onPress={() => setIsModalVisible(true)}
+        >
+          <Text style={styles.sortFilterButtonText}>
+            🔧 Sort & Filter
+          </Text>
+          <Text style={styles.sortFilterSubtext}>
+            {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)} • {filterBy.charAt(0).toUpperCase() + filterBy.slice(1)}
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -319,6 +281,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
+
+      {/* Sort & Filter Modal */}
+      <SortFilterModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        sortBy={sortBy}
+        filterBy={filterBy}
+        onSortChange={setSortBy}
+        onFilterChange={setFilterBy}
+      />
     </View>
   );
 };
@@ -368,43 +340,23 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
-  controlsContainer: {
-    gap: 12,
-  },
-  controlGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  controlLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    minWidth: 60,
-  },
-  controlButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  controlButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#F0F0F0',
+  sortFilterButton: {
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: '#E9ECEF',
+    alignItems: 'center',
   },
-  controlButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+  sortFilterButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
   },
-  controlButtonText: {
+  sortFilterSubtext: {
     fontSize: 12,
     color: '#666',
-    fontWeight: '500',
-  },
-  controlButtonTextActive: {
-    color: 'white',
   },
   listContainer: {
     paddingBottom: 80, // Space for FAB

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Animated,
 } from 'react-native';
 import { Goal } from '../storage/storage';
 import { Countdown, CountdownUtils } from './Countdown';
@@ -25,6 +26,11 @@ export const GoalItem: React.FC<GoalItemProps> = ({
   onDelete,
   onEdit,
 }) => {
+  const [currentProgress, setCurrentProgress] = useState<number>(0);
+  const [timeRemaining, setTimeRemaining] = useState<{ days: number; hours: number; minutes: number }>({ days: 0, hours: 0, minutes: 0 });
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressAnimation = useRef(new Animated.Value(0)).current;
+  
   const isExpired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);
   const deadlineFormatted = CountdownUtils.formatDeadline(goal.deadlineDate, goal.deadlineTime);
 
@@ -65,6 +71,141 @@ export const GoalItem: React.FC<GoalItemProps> = ({
     // Could trigger notifications or other actions when goal expires
     console.log(`Goal "${goal.title}" has expired!`);
   };
+
+  /**
+   * Calculate target progress percentage based on time remaining
+   * Converts time remaining to seconds and calculates percentage
+   */
+  const calculateTargetProgress = (): number => {
+    if (isExpired) return 100;
+
+    try {
+      const [year, month, day] = goal.deadlineDate.split('-').map(Number);
+      const [hour, minute] = goal.deadlineTime.split(':').map(Number);
+      const deadline = new Date(year, month - 1, day, hour, minute, 0, 0);
+      const now = new Date();
+      const createdAt = new Date(goal.createdAt);
+
+      // Calculate total duration from creation to deadline in seconds
+      const totalDurationSeconds = (deadline.getTime() - createdAt.getTime()) / 1000;
+      
+      // Calculate time remaining in seconds
+      const timeRemainingSeconds = Math.max(0, (deadline.getTime() - now.getTime()) / 1000);
+      
+      // Calculate progress percentage (0-100)
+      // Progress = (total time - remaining time) / total time * 100
+      const progress = Math.min(100, Math.max(0, ((totalDurationSeconds - timeRemainingSeconds) / totalDurationSeconds) * 100));
+      
+      return progress;
+    } catch (error) {
+      console.error('Error calculating progress:', error);
+      return 0;
+    }
+  };
+
+  /**
+   * Calculate time remaining in a readable format
+   */
+  const calculateTimeRemaining = (): { days: number; hours: number; minutes: number } => {
+    if (isExpired) return { days: 0, hours: 0, minutes: 0 };
+
+    try {
+      const [year, month, day] = goal.deadlineDate.split('-').map(Number);
+      const [hour, minute] = goal.deadlineTime.split(':').map(Number);
+      const deadline = new Date(year, month - 1, day, hour, minute, 0, 0);
+      const now = new Date();
+      const difference = deadline.getTime() - now.getTime();
+
+      if (difference <= 0) return { days: 0, hours: 0, minutes: 0 };
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+
+      return { days, hours, minutes };
+    } catch (error) {
+      return { days: 0, hours: 0, minutes: 0 };
+    }
+  };
+
+  /**
+   * Update progress based on actual time calculation
+   */
+  const updateProgress = () => {
+    if (!isExpired) {
+      const targetProgress = calculateTargetProgress();
+      const newProgress = Math.min(100, Math.max(0, targetProgress));
+      
+      if (Math.abs(newProgress - currentProgress) > 0.1) { // Only update if significant change
+        console.log(`Updating progress: ${currentProgress}% -> ${newProgress}%`);
+        setCurrentProgress(newProgress);
+        
+        // Animate the progress bar smoothly
+        Animated.timing(progressAnimation, {
+          toValue: newProgress,
+          duration: 500, // Smooth animation over 0.5 seconds
+          useNativeDriver: false,
+        }).start();
+      }
+    }
+  };
+
+  /**
+   * Update time remaining
+   */
+  const updateTimeRemaining = () => {
+    const remaining = calculateTimeRemaining();
+    setTimeRemaining(remaining);
+  };
+
+  /**
+   * Start automatic progress and time updates
+   */
+  useEffect(() => {
+    console.log('Setting up progress updates for goal:', goal.title);
+    
+    // Initialize progress animation with current calculated progress
+    const initialProgress = calculateTargetProgress();
+    setCurrentProgress(initialProgress);
+    progressAnimation.setValue(initialProgress);
+    
+    // Don't start timers for expired goals
+    if (isExpired) {
+      console.log('Goal is expired, stopping all timers');
+      return;
+    }
+    
+    // Update progress and time remaining every 10 seconds for smooth rendering
+    const updateInterval = 10000; // 10 seconds
+    
+    // Start updating progress and time
+    intervalRef.current = setInterval(() => {
+      console.log('Updating progress and time for goal:', goal.title);
+      updateProgress();
+      updateTimeRemaining();
+    }, updateInterval);
+    
+    // Cleanup intervals on unmount
+    return () => {
+      console.log('Cleaning up intervals for goal:', goal.title);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [goal.id, isExpired]); // Depend on goal.id and isExpired
+
+  /**
+   * Cleanup interval when component unmounts
+   */
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+ 
 
   return (
     <View style={[styles.container, isExpired && styles.expiredContainer]}>
@@ -128,20 +269,48 @@ export const GoalItem: React.FC<GoalItemProps> = ({
 
       {/* Progress Indicator (Visual) */}
       <View style={styles.progressContainer}>
+        <View style={styles.progressHeader}>
+          <Text style={[styles.progressLabel, isExpired && styles.expiredText]}>
+            Progress
+          </Text>
+          <Text style={[styles.progressPercentage, isExpired && styles.expiredText]}>
+            {isExpired ? '100%' : `${Math.round(currentProgress)}%`}
+          </Text>
+        </View>
         <View style={styles.progressBar}>
-          <View
+          <Animated.View
             style={[
               styles.progressFill,
               {
-                width: isExpired ? '100%' : '0%',
+                width: isExpired ? '100%' : progressAnimation.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['0%', '100%'],
+                  extrapolate: 'clamp',
+                }),
                 backgroundColor: isExpired ? '#FF3B30' : '#007AFF',
               },
             ]}
           />
         </View>
-        <Text style={[styles.progressText, isExpired && styles.expiredText]}>
-          {isExpired ? 'Goal completed' : 'In progress'}
-        </Text>
+        <View style={styles.progressInfo}>
+          <Text style={[styles.progressText, isExpired && styles.expiredText]}>
+            {isExpired ? 'Goal completed' : 'In progress'}
+          </Text>
+          {!isExpired && (
+            <Text style={styles.timeRemainingText}>
+              {(() => {
+                if (timeRemaining.days > 0) {
+                  return `${timeRemaining.days}d ${timeRemaining.hours}h remaining`;
+                } else if (timeRemaining.hours > 0) {
+                  return `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`;
+                } else {
+                  return `${timeRemaining.minutes}m remaining`;
+                }
+              })()}
+            </Text>
+          )}
+        </View>
+        
       </View>
 
       {/* Creation Date */}
@@ -259,21 +428,47 @@ const styles = StyleSheet.create({
   progressContainer: {
     marginBottom: 8,
   },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
   progressBar: {
-    height: 4,
+    height: 6,
     backgroundColor: '#E9ECEF',
-    borderRadius: 2,
+    borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   progressText: {
     fontSize: 12,
     color: '#666',
-    textAlign: 'center',
+    fontWeight: '500',
+  },
+  timeRemainingText: {
+    fontSize: 11,
+    color: '#999',
+    fontStyle: 'italic',
   },
   metaContainer: {
     borderTopWidth: 1,
