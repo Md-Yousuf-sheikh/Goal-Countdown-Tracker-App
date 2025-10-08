@@ -68,7 +68,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
    */
   const handleExpired = () => {
     // Could trigger notifications or other actions when goal expires
-    console.log(`Goal "${goal.title}" has expired!`);
+    // console.log(`Goal "${goal.title}" has expired!`);
   };
 
   /**
@@ -136,7 +136,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
       const newProgress = Math.min(100, Math.max(0, targetProgress));
       
       if (Math.abs(newProgress - currentProgress) > 0.1) { // Only update if significant change
-        console.log(`Updating progress: ${currentProgress}% -> ${newProgress}%`);
+        // console.log(`Updating progress: ${currentProgress}% -> ${newProgress}%`);
         setCurrentProgress(newProgress);
         
         // Animate the progress bar smoothly
@@ -164,7 +164,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
     const expired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);
     if (expired !== isExpired) {
       setIsExpired(expired);
-      console.log(`Goal "${goal.title}" expired state changed: ${isExpired} -> ${expired}`);
+      // console.log(`Goal "${goal.title}" expired state changed: ${isExpired} -> ${expired}`);
     }
   };
 
@@ -189,7 +189,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
    * Start automatic progress and time updates
    */
   useEffect(() => {
-    console.log('Setting up progress updates for goal:', goal.title);
+    // console.log('Setting up progress updates for goal:', goal.title);
     
     // Reset progress state when goal data changes
     setCurrentProgress(0);
@@ -206,7 +206,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
     
     // Don't start timers for expired goals
     if (isExpired) {
-      console.log('Goal is expired, stopping all timers');
+      // console.log('Goal is expired, stopping all timers');
       return;
     }
     
@@ -215,7 +215,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
     
     // Start updating progress and time
     intervalRef.current = setInterval(() => {
-      console.log('Updating progress and time for goal:', goal.title);
+      // console.log('Updating progress and time for goal:', goal.title);
       checkExpiredState(); // Check expired state first
       updateProgress();
       updateTimeRemaining();
@@ -223,7 +223,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
     
     // Cleanup intervals on unmount
     return () => {
-      console.log('Cleaning up intervals for goal:', goal.title);
+      // console.log('Cleaning up intervals for goal:', goal.title);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }

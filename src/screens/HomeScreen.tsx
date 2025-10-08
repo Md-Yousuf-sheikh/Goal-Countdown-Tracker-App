@@ -127,7 +127,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         // If goal just expired, we need to trigger a re-render
         if (isExpired) {
           hasChanges = true;
-          console.log(`Goal "${goal.title}" has expired!`);
+          // console.log(`Goal "${goal.title}" has expired!`);
         }
         return goal;
       });
@@ -180,7 +180,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     
     // Check for expired goals every 1 second for instant expiration detection
     expiryCheckInterval.current = setInterval(() => {
-      console.log('Checking for expired goals...');
+      // console.log('Checking for expired goals...');
       checkForExpiredGoals();
       checkForGoalsExpiringSoon();
     }, 1000);
@@ -212,7 +212,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
    */
   useFocusEffect(
     useCallback(() => {
-      console.log('HomeScreen focused - refreshing goals');
+      // console.log('HomeScreen focused - refreshing goals');
       loadGoals();
       // Also check for expired goals immediately when screen comes into focus
       setTimeout(() => {
@@ -234,6 +234,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
    */
   const sortGoals = (goalsToSort: Goal[]): Goal[] => {
     return [...goalsToSort].sort((a, b) => {
+      // Check if goals are expired
+      const aExpired = CountdownUtils.isExpired(a.deadlineDate, a.deadlineTime);
+      const bExpired = CountdownUtils.isExpired(b.deadlineDate, b.deadlineTime);
+      
+      // When filter is "all", show expired goals at the bottom
+      if (filterBy === 'all') {
+        if (aExpired && !bExpired) return 1; // a goes after b
+        if (!aExpired && bExpired) return -1; // a goes before b
+        // If both have same expired status, continue with normal sorting
+      }
+      
       switch (sortBy) {
         case 'deadline':
           const deadlineA = new Date(`${a.deadlineDate}T${a.deadlineTime}`).getTime();
