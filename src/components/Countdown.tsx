@@ -170,38 +170,14 @@ export const Countdown: React.FC<CountdownProps> = ({
     }
   };
 
-  /**
-   * Calculate progress percentage (0-100)
-   * Useful for progress bars or visual indicators
-   */
-  const getProgressPercentage = (): number => {
-    if (isExpired) return 100;
-    
-    try {
-      const [year, month, day] = deadlineDate.split('-').map(Number);
-      const [hour, minute] = deadlineTime.split(':').map(Number);
-      const deadline = new Date(year, month - 1, day, hour, minute, 0, 0);
-      const now = new Date();
-      
-      // Calculate total duration from creation to deadline
-      // For simplicity, we'll use a default duration if we don't have creation time
-      const totalDuration = 7 * 24 * 60 * 60 * 1000; // 7 days default
-      const elapsed = totalDuration - timeRemaining.total;
-      
-      return Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-    } catch (error) {
-      return 0;
-    }
-  };
-
   return (
     <View style={styles.container}>
       <Text style={[styles.countdownText, isExpired && styles.expiredText]}>
         {getCountdownText()}
       </Text>
-      <Text style={[styles.compactText, isExpired && styles.expiredText]}>
+      {/* <Text style={[styles.countdownText, isExpired && styles.expiredText]}>
         {getCompactCountdownText()}
-      </Text>
+      </Text> */}
     </View>
   );
 };
