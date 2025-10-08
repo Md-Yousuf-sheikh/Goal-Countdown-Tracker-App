@@ -395,19 +395,6 @@ export const GoalItem: React.FC<GoalItemProps> = ({
           <Text style={[styles.progressText, isExpired && styles.expiredText]}>
             {isExpired ? "Goal completed" : "In progress"}
           </Text>
-          {!isExpired && (
-            <Text style={styles.timeRemainingText}>
-              {(() => {
-                if (timeRemaining.days > 0) {
-                  return `${timeRemaining.days}d ${timeRemaining.hours}h remaining`;
-                } else if (timeRemaining.hours > 0) {
-                  return `${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`;
-                } else {
-                  return `${timeRemaining.minutes}m remaining`;
-                }
-              })()}
-            </Text>
-          )}
         </View>
       </View>
 
