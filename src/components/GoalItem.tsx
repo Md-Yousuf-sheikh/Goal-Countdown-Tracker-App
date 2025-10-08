@@ -251,7 +251,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
 
     // Don't start timers for expired goals
     if (isExpired) {
-      console.log("Goal is expired, stopping all timers");
+      // console.log("Goal is expired, stopping all timers");
       return;
     }
 
