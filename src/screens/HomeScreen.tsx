@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { GoalStorage, Goal } from "../storage/storage";
 import { GoalItem } from "../components/GoalItem";
 import { CountdownUtils } from "../components/Countdown";
+import sendNotification from "../utils/sendNotification";
 
 interface HomeScreenProps {
   navigation: any;
@@ -31,6 +32,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
   const [filterBy, setFilterBy] = useState<"all" | "active" | "expired">("all");
   const expiryCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const [notifiedGoals, setNotifiedGoals] = useState<Set<string>>(new Set());
+  const goalsRef = useRef<Goal[]>([]);
+  const notifiedGoalsRef = useRef<Set<string>>(new Set());
 
   /**
    * Load goals from storage
@@ -39,6 +43,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     try {
       const loadedGoals = await GoalStorage.getAllGoals();
       setGoals(loadedGoals);
+
+      // Load notified goals from storage
+      const loadedNotifiedGoals = await GoalStorage.getNotifiedGoals();
+      setNotifiedGoals(loadedNotifiedGoals);
     } catch (error) {
       console.error("Error loading goals:", error);
       Alert.alert("Error", "Failed to load goals. Please try again.", [
@@ -56,6 +64,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   useEffect(() => {
     loadGoals();
   }, [loadGoals]);
+
+  /**
+   * Update refs when state changes
+   */
+  useEffect(() => {
+    goalsRef.current = goals;
+  }, [goals]);
+
+  useEffect(() => {
+    notifiedGoalsRef.current = notifiedGoals;
+  }, [notifiedGoals]);
+
+  /**
+   * Persist notified goals to storage when they change
+   */
+  useEffect(() => {
+    if (notifiedGoals.size > 0) {
+      GoalStorage.saveNotifiedGoals(notifiedGoals).catch((error) => {
+        console.error("Error saving notified goals:", error);
+      });
+    }
+  }, [notifiedGoals]);
 
   /**
    * Handle goal deletion
@@ -106,7 +136,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   /**
    * Check for newly expired goals and update state
    */
-  const checkForExpiredGoals = useCallback(() => {
+  const checkForExpiredGoals = useCallback(async () => {
     setGoals((prevGoals) => {
       let hasChanges = false;
       const updatedGoals = prevGoals.map((goal) => {
@@ -125,7 +155,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       // Only update state if there are changes to prevent unnecessary re-renders
       return hasChanges ? [...updatedGoals] : prevGoals;
     });
-  }, []);
+
+    // Check for newly expired goals and send notifications
+    // Use refs to get current values and avoid stale closure issues
+    const currentGoals = goalsRef.current;
+    const currentNotified = notifiedGoalsRef.current;
+
+    for (const goal of currentGoals) {
+      const isExpired = CountdownUtils.isExpired(
+        goal.deadlineDate,
+        goal.deadlineTime
+      );
+
+      // If goal is expired and we haven't sent notification yet
+      if (isExpired && !currentNotified.has(goal.id)) {
+        try {
+          await sendNotification(
+            "Goal Expired!",
+            `"${goal.title}" has reached its deadline. ${
+              goal.description ? `Description: ${goal.description}` : ""
+            }`
+          );
+          // Update the notified goals set and persist to storage
+          setNotifiedGoals((prev) => new Set([...prev, goal.id]));
+          // Also persist immediately to storage for reliability
+          GoalStorage.addNotifiedGoal(goal.id).catch((error) => {
+            console.error("Error persisting notified goal:", error);
+          });
+        } catch (error) {
+          console.error("Error sending expiration notification:", error);
+        }
+      }
+    }
+  }, []); // Remove dependencies to avoid stale closure
 
   /**
    * Check for goals expiring soon (within next minute) for smoother transitions

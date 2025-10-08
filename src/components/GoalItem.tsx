@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Goal } from '../storage/storage';
 import { Countdown, CountdownUtils } from './Countdown';
+// import sendNotification from '../utils/sendNotification';
 
 interface GoalItemProps {
   goal: Goal;
@@ -31,6 +32,7 @@ export const GoalItem: React.FC<GoalItemProps> = ({
   const [isExpired, setIsExpired] = useState<boolean>(CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime));
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
+  const notificationSent = useRef<boolean>(false);
   const deadlineFormatted = CountdownUtils.formatDeadline(goal.deadlineDate, goal.deadlineTime);
 
   /**
@@ -66,9 +68,21 @@ export const GoalItem: React.FC<GoalItemProps> = ({
   /**
    * Handle countdown expiration
    */
-  const handleExpired = () => {
-    // Could trigger notifications or other actions when goal expires
-    // console.log(`Goal "${goal.title}" has expired!`);
+  const handleExpired = async () => {
+    // Only send notification once per goal expiration
+    if (!notificationSent.current) {
+      try {
+        // Send notification when goal expires
+        // await sendNotification(
+        //   'Goal Expired!',
+        //   `"${goal.title}" has reached its deadline. ${goal.description ? `Description: ${goal.description}` : ''}`
+        // );
+        // console.log(`Goal "${goal.title}" has expired! Notification sent.`);
+        notificationSent.current = true;
+      } catch (error) {
+        console.error('Error sending expiration notification:', error);
+      }
+    }
   };
 
   /**
@@ -194,6 +208,9 @@ export const GoalItem: React.FC<GoalItemProps> = ({
     // Reset progress state when goal data changes
     setCurrentProgress(0);
     progressAnimation.setValue(0);
+    
+    // Reset notification flag when goal data changes
+    notificationSent.current = false;
     
     // Reset expired state when goal data changes
     const initialExpired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);

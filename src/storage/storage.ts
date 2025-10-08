@@ -13,6 +13,8 @@ export interface Goal {
 
 // Storage key for goals
 const GOALS_STORAGE_KEY = '@countdown_tracker_goals';
+// Storage key for notified goals
+const NOTIFIED_GOALS_STORAGE_KEY = '@countdown_tracker_notified_goals';
 
 /**
  * Storage utility class for managing goals in AsyncStorage
@@ -111,5 +113,66 @@ export class GoalStorage {
    */
   static generateId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  }
+
+  /**
+   * Save notified goals to AsyncStorage
+   * @param notifiedGoals - Set of goal IDs that have been notified
+   * @returns Promise<boolean> - Success status
+   */
+  static async saveNotifiedGoals(notifiedGoals: Set<string>): Promise<boolean> {
+    try {
+      const notifiedGoalsArray = Array.from(notifiedGoals);
+      await AsyncStorage.setItem(NOTIFIED_GOALS_STORAGE_KEY, JSON.stringify(notifiedGoalsArray));
+      return true;
+    } catch (error) {
+      console.error('Error saving notified goals:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get notified goals from AsyncStorage
+   * @returns Promise<Set<string>> - Set of goal IDs that have been notified
+   */
+  static async getNotifiedGoals(): Promise<Set<string>> {
+    try {
+      const notifiedGoalsJson = await AsyncStorage.getItem(NOTIFIED_GOALS_STORAGE_KEY);
+      const notifiedGoalsArray = notifiedGoalsJson ? JSON.parse(notifiedGoalsJson) : [];
+      return new Set(notifiedGoalsArray);
+    } catch (error) {
+      console.error('Error getting notified goals:', error);
+      return new Set();
+    }
+  }
+
+  /**
+   * Add a goal ID to notified goals
+   * @param goalId - ID of the goal to mark as notified
+   * @returns Promise<boolean> - Success status
+   */
+  static async addNotifiedGoal(goalId: string): Promise<boolean> {
+    try {
+      const notifiedGoals = await this.getNotifiedGoals();
+      notifiedGoals.add(goalId);
+      return await this.saveNotifiedGoals(notifiedGoals);
+    } catch (error) {
+      console.error('Error adding notified goal:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Clear all notified goals from storage
+   * @returns Promise<boolean> - Success status
+   */
+  static async clearNotifiedGoals(): Promise<boolean> {
+    try {
+      await AsyncStorage.removeItem(NOTIFIED_GOALS_STORAGE_KEY);
+      return true;
+    } catch (error) {
+      console.error('Error clearing notified goals:', error);
+      return false;
+    }
   }
 }

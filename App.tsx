@@ -9,7 +9,6 @@ import * as Notifications from "expo-notifications";
 // Configure how notifications are displayed when received in the foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowBanner: true,
