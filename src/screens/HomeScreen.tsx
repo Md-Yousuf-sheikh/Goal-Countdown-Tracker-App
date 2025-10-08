@@ -403,7 +403,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   /**
-   * Render header with stats and controls
+   * Render header with stats only
    */
   const renderHeader = () => {
     const stats = getStats();
@@ -428,121 +428,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Text style={styles.statLabel}>Expired</Text>
           </View>
         </View>
-
-        {/* Sort Controls */}
-        <View style={styles.controlsContainer}>
-          <Text style={styles.controlsTitle}>Sort & Filter</Text>
-
-          {/* Sort Options */}
-          <View style={styles.sortContainer}>
-            <Text style={styles.controlLabel}>Sort by:</Text>
-            <View style={styles.sortButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.sortButton,
-                  sortBy === "deadline" && styles.sortButtonActive,
-                ]}
-                onPress={() => setSortBy("deadline")}
-              >
-                <Text
-                  style={[
-                    styles.sortButtonText,
-                    sortBy === "deadline" && styles.sortButtonTextActive,
-                  ]}
-                >
-                  Nearest Deadline
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.sortButton,
-                  sortBy === "created" && styles.sortButtonActive,
-                ]}
-                onPress={() => setSortBy("created")}
-              >
-                <Text
-                  style={[
-                    styles.sortButtonText,
-                    sortBy === "created" && styles.sortButtonTextActive,
-                  ]}
-                >
-                  Created Date
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.sortButton,
-                  sortBy === "title" && styles.sortButtonActive,
-                ]}
-                onPress={() => setSortBy("title")}
-              >
-                <Text
-                  style={[
-                    styles.sortButtonText,
-                    sortBy === "title" && styles.sortButtonTextActive,
-                  ]}
-                >
-                  Title
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Filter Options */}
-          <View style={styles.filterContainer}>
-            <Text style={styles.controlLabel}>Filter:</Text>
-            <View style={styles.filterButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterBy === "all" && styles.filterButtonActive,
-                ]}
-                onPress={() => setFilterBy("all")}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    filterBy === "all" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  All
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterBy === "active" && styles.filterButtonActive,
-                ]}
-                onPress={() => setFilterBy("active")}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    filterBy === "active" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  Active
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterBy === "expired" && styles.filterButtonActive,
-                ]}
-                onPress={() => setFilterBy("expired")}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    filterBy === "expired" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  Expired
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
       </View>
     );
   };
@@ -557,6 +442,119 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Top Controls Bar */}
+      <View style={styles.topControlsBar}>
+        {/* Filter Controls */}
+        <View style={styles.topControlsSection}>
+          <Text style={styles.topControlsLabel}>Filter:</Text>
+          <View style={styles.filterButtons}>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterBy === "all" && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilterBy("all")}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterBy === "all" && styles.filterButtonTextActive,
+                ]}
+              >
+                All
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterBy === "active" && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilterBy("active")}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterBy === "active" && styles.filterButtonTextActive,
+                ]}
+              >
+                Active
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterBy === "expired" && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilterBy("expired")}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterBy === "expired" && styles.filterButtonTextActive,
+                ]}
+              >
+                Expired
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Sort Controls */}
+        <View style={styles.topControlsSection}>
+          <Text style={styles.topControlsLabel}>Sort:</Text>
+          <View style={styles.sortButtons}>
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === "deadline" && styles.sortButtonActive,
+              ]}
+              onPress={() => setSortBy("deadline")}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortBy === "deadline" && styles.sortButtonTextActive,
+                ]}
+              >
+                Deadline
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === "created" && styles.sortButtonActive,
+              ]}
+              onPress={() => setSortBy("created")}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortBy === "created" && styles.sortButtonTextActive,
+                ]}
+              >
+                Created
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === "title" && styles.sortButtonActive,
+              ]}
+              onPress={() => setSortBy("title")}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortBy === "title" && styles.sortButtonTextActive,
+                ]}
+              >
+                Title
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
       {renderHeader()}
 
       <FlatList
@@ -601,20 +599,21 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "white",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E9ECEF",
   },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 20,
+    marginBottom: 5,
   },
   statItem: {
     alignItems: "center",
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 35,
     fontWeight: "bold",
     color: "#333",
   },
@@ -629,23 +628,19 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 4,
   },
-  controlsContainer: {
-    marginTop: 16,
+  topControlsBar: {
+    backgroundColor: "white",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E9ECEF",
   },
-  controlsTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
+  topControlsSection: {
+    marginBottom: 10,
   },
-  sortContainer: {
-    marginBottom: 16,
-  },
-  filterContainer: {
-    marginBottom: 8,
-  },
-  controlLabel: {
-    fontSize: 14,
+  topControlsLabel: {
+    fontSize: 12,
     fontWeight: "600",
     color: "#666",
     marginBottom: 8,
@@ -657,12 +652,13 @@ const styles = StyleSheet.create({
   },
   filterButtons: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   sortButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#DDD",
     backgroundColor: "white",
@@ -672,7 +668,7 @@ const styles = StyleSheet.create({
     borderColor: "#007AFF",
   },
   sortButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#666",
     fontWeight: "500",
   },
@@ -681,21 +677,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: "#DDD",
     backgroundColor: "white",
-    flex: 1,
     alignItems: "center",
+    minWidth: 70,
   },
   filterButtonActive: {
     backgroundColor: "#007AFF",
     borderColor: "#007AFF",
   },
   filterButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666",
     fontWeight: "500",
   },
