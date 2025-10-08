@@ -178,12 +178,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       clearInterval(expiryCheckInterval.current);
     }
     
-    // Check for expired goals every 10 seconds for more responsive updates
+    // Check for expired goals every 1 second for instant expiration detection
     expiryCheckInterval.current = setInterval(() => {
       console.log('Checking for expired goals...');
       checkForExpiredGoals();
       checkForGoalsExpiringSoon();
-    }, 10000);
+    }, 1000);
   }, [checkForExpiredGoals, checkForGoalsExpiringSoon]);
 
   /**

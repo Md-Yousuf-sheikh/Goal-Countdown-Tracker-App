@@ -28,10 +28,9 @@ export const GoalItem: React.FC<GoalItemProps> = ({
 }) => {
   const [currentProgress, setCurrentProgress] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState<{ days: number; hours: number; minutes: number }>({ days: 0, hours: 0, minutes: 0 });
+  const [isExpired, setIsExpired] = useState<boolean>(CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime));
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
-  
-  const isExpired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);
   const deadlineFormatted = CountdownUtils.formatDeadline(goal.deadlineDate, goal.deadlineTime);
 
   /**
@@ -159,6 +158,34 @@ export const GoalItem: React.FC<GoalItemProps> = ({
   };
 
   /**
+   * Check and update expired state
+   */
+  const checkExpiredState = () => {
+    const expired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);
+    if (expired !== isExpired) {
+      setIsExpired(expired);
+      console.log(`Goal "${goal.title}" expired state changed: ${isExpired} -> ${expired}`);
+    }
+  };
+
+  /**
+   * Check if goal is about to expire (within next 60 seconds)
+   */
+  const isAboutToExpire = (): boolean => {
+    try {
+      const [year, month, day] = goal.deadlineDate.split('-').map(Number);
+      const [hour, minute] = goal.deadlineTime.split(':').map(Number);
+      const deadline = new Date(year, month - 1, day, hour, minute, 0, 0);
+      const now = new Date();
+      const timeUntilExpiry = deadline.getTime() - now.getTime();
+      
+      return timeUntilExpiry <= 60000 && timeUntilExpiry > 0; // Within 60 seconds
+    } catch (error) {
+      return false;
+    }
+  };
+
+  /**
    * Start automatic progress and time updates
    */
   useEffect(() => {
@@ -167,6 +194,10 @@ export const GoalItem: React.FC<GoalItemProps> = ({
     // Reset progress state when goal data changes
     setCurrentProgress(0);
     progressAnimation.setValue(0);
+    
+    // Reset expired state when goal data changes
+    const initialExpired = CountdownUtils.isExpired(goal.deadlineDate, goal.deadlineTime);
+    setIsExpired(initialExpired);
     
     // Initialize progress animation with current calculated progress
     const initialProgress = calculateTargetProgress();
@@ -179,12 +210,13 @@ export const GoalItem: React.FC<GoalItemProps> = ({
       return;
     }
     
-    // Update progress and time remaining every 10 seconds for smooth rendering
-    const updateInterval = 10000; // 10 seconds
+    // Use faster updates for goals about to expire
+    const updateInterval = isAboutToExpire() ? 100 : 1000; // 100ms if about to expire, 1s otherwise
     
     // Start updating progress and time
     intervalRef.current = setInterval(() => {
       console.log('Updating progress and time for goal:', goal.title);
+      checkExpiredState(); // Check expired state first
       updateProgress();
       updateTimeRemaining();
     }, updateInterval);
@@ -211,17 +243,32 @@ export const GoalItem: React.FC<GoalItemProps> = ({
 
  
 
+  const aboutToExpire = isAboutToExpire();
+  
   return (
-    <View style={[styles.container, isExpired && styles.expiredContainer]}>
+    <View style={[
+      styles.container, 
+      isExpired && styles.expiredContainer,
+      aboutToExpire && !isExpired && styles.warningContainer
+    ]}>
       {/* Goal Header */}
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={[styles.title, isExpired && styles.expiredText]}>
+          <Text style={[
+            styles.title, 
+            isExpired && styles.expiredText,
+            aboutToExpire && !isExpired && styles.warningText
+          ]}>
             {goal.title}
           </Text>
           {isExpired && (
             <View style={styles.expiredBadge}>
               <Text style={styles.expiredBadgeText}>EXPIRED</Text>
+            </View>
+          )}
+          {aboutToExpire && !isExpired && (
+            <View style={styles.warningBadge}>
+              <Text style={styles.warningBadgeText}>SOON</Text>
             </View>
           )}
         </View>
@@ -349,6 +396,10 @@ const styles = StyleSheet.create({
     borderLeftColor: '#FF3B30',
     backgroundColor: '#FFF5F5',
   },
+  warningContainer: {
+    borderLeftColor: '#FF9500',
+    backgroundColor: '#FFF8F0',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -371,6 +422,9 @@ const styles = StyleSheet.create({
   expiredText: {
     color: '#FF3B30',
   },
+  warningText: {
+    color: '#FF9500',
+  },
   expiredBadge: {
     backgroundColor: '#FF3B30',
     paddingHorizontal: 8,
@@ -378,6 +432,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   expiredBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  warningBadge: {
+    backgroundColor: '#FF9500',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  warningBadgeText: {
     color: 'white',
     fontSize: 10,
     fontWeight: 'bold',
